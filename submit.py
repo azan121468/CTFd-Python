@@ -38,8 +38,9 @@ def submit_flag(api_url, chall_id, flag):
     r = requests.post(f'{api_url}/challenges/attempt', headers=headers, json=data)
     return r.text
 
-
-flag_submission = sys.argv[1]
+if len(sys.argv) < 2:
+    flag_submission = input()
+else:
+    flag_submission = sys.argv[1]
 print(submit_flag(api_url, <chall_id>, flag_submission))
-
 

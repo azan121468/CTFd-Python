@@ -79,14 +79,16 @@ def download_file(session, url, output_path, desc):
 
 
 def handle_challenge_files(session, challenge, challenge_dir, base_url):
-    files_dir = os.path.join(challenge_dir, "files")
-    os.makedirs(files_dir, exist_ok=True)
+    challenge_files = challenge.get("files", [])
+    if challenge_files: # if challenge has files, only then create the files directory and put all the files there
+        files_dir = os.path.join(challenge_dir, "files")
+        os.makedirs(files_dir, exist_ok=True)
 
-    for file in challenge.get("files", []):
-        file_url = urljoin(base_url, file)
-        file_name = urlparse(file_url).path.split("/")[-1]
-        local_path = os.path.join(files_dir, file_name)
-        download_file(session, file_url, local_path, file_name)
+        for file in challenge.get("files", []):
+            file_url = urljoin(base_url, file)
+            file_name = urlparse(file_url).path.split("/")[-1]
+            local_path = os.path.join(files_dir, file_name)
+            download_file(session, file_url, local_path, file_name)
 
 
 def write_ctf_readme(output_dir, ctf_name, categories):
@@ -96,7 +98,12 @@ def write_ctf_readme(output_dir, ctf_name, categories):
         ctf_readme.write(f"# {ctf_name}\n\n")
         ctf_readme.write("## About\n\n[insert description here]\n\n")
         ctf_readme.write("## Challenges\n\n")
+        
+        first_category = True
         for category, challenges in categories.items():
+            if not first_category:
+                ctf_readme.write("\n")  # Add a space before new category
+            first_category = False
             ctf_readme.write(f"### {category}\n\n")
             for chall in challenges:
                 chall_path = f"challenges/{chall['category']}/{slugify(chall['name'])}/"
@@ -104,7 +111,6 @@ def write_ctf_readme(output_dir, ctf_name, categories):
     return readme_path
 
 def write_submitter(challenge_dir, chall_data):
-    # chall_data = chall_data['data']
     submitter = os.path.join(challenge_dir, 'submit.py')
     with open('submit.py') as f:
         data = f.read()
@@ -148,14 +154,18 @@ def main():
     challenges_data = fetch_challenges(api_url, headers)
 
     categories = {}
-    print(challenges_data)
+    if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
+        print('Please provide correct token or session cookie in config file')
+        exit(-1)
     for chall in challenges_data['data']:
         challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
-        # print(challenge)
         category = challenge["category"]
         categories.setdefault(category, []).append(challenge)
 
         challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
+        if os.path.exists(challenge_dir):
+            print(f"Challenge already downloaded : {challenge['name']}")
+            continue
         os.makedirs(challenge_dir, exist_ok=True)
 
         write_challenge_readme(challenge_dir, challenge)
@@ -164,7 +174,12 @@ def main():
         if requires_instance(challenge):
             shutil.copy('instance.py', challenge_dir)
 
-    write_ctf_readme(output_dir, ctf_name, categories)
+    try:
+        os.rmdir('images')
+    except:
+        pass # directory not removed as it has files in it.
+
+    write_ctf_readme(os.path.join(output_dir, 'challenges'), ctf_name, categories)
     logging.info("All done!")
 
 

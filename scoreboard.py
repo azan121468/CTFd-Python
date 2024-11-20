@@ -33,10 +33,10 @@ def get_score_board(api_url):
     elif cookie:
         headers["Cookie"] = f"session={cookie}"
     r = requests.get(f'{api_url}/scoreboard', headers=headers)
-    data = r.text
-    with open('scoreboard.txt', 'w') as f:
-        f.write(data)
-    return json.loads(data)['data']
+    data = json.loads(r.text)
+    with open(os.path.dirname(os.path.realpath(__file__))+'scoreboard.txt', 'w') as f:
+        f.write(json.dumps(data))
+    return data['data']
 
 def print_team_data(data):
     try:

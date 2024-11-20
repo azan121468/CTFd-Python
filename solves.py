@@ -23,25 +23,13 @@ cookie = ctf_config.get("cookie", "").strip()
 
 api_url = urljoin(base_url, '/api/v1')
 
-
-def submit_flag(api_url, chall_id, flag):
-    # headers = {"Content-Type": "application/json"}
-    headers = {}
+def get_solves(challenge_id):
+    headers = {'content-type': 'application/json'}
     if token:
         headers["Authorization"] = f"Token {token}"
     elif cookie:
         headers["Cookie"] = f"session={cookie}"
-    data = {
-        'challenge_id': chall_id,
-        'submission': flag
-    }
+    r = requests.get(f'https://demo.ctfd.io/api/v1/challenges/{challenge_id}/solves', headers=headers)
+    return json.loads(r.text.strip())
 
-    r = requests.post(f'{api_url}/challenges/attempt', headers=headers, json=data)
-    return json.loads(r.text)
-
-if len(sys.argv) < 2:
-    flag_submission = input()
-else:
-    flag_submission = sys.argv[1]
-print(submit_flag(api_url, <chall_id>, flag_submission))
-
+print(json.dumps(get_solves(<chall_id>)))

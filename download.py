@@ -49,7 +49,7 @@ def write_challenge_readme(challenge_dir, challenge):
     logging.info(f"Creating challenge readme: {challenge['name']}")
     with open(readme_path, "w") as chall_readme:
         chall_readme.write(f"# {challenge['name']}\n\n")
-        chall_readme.write(f"## Challenge ID\n\n{challenge['id']}\n\n")
+        # chall_readme.write(f"## Challenge ID\n\n{challenge['id']}\n\n")
         chall_readme.write(f"## Description\n\n{challenge['description']}\n\n")
         chall_readme.write(f"## Points\n\n{challenge.get('value', 'N/A')}\n\n")
         
@@ -118,6 +118,13 @@ def write_submitter(challenge_dir, chall_data):
     with open(submitter, 'w') as f:
         f.write(data)
 
+def write_solves(challenge_dir, chall_data):
+    submitter = os.path.join(challenge_dir, 'solves.py')
+    with open('solves.py') as f:
+        data = f.read()
+    data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
+    with open(submitter, 'w') as f:
+        f.write(data)
 
 def load_config():
     config = ConfigParser()
@@ -171,6 +178,7 @@ def main():
         write_challenge_readme(challenge_dir, challenge)
         handle_challenge_files(session, challenge, challenge_dir, base_url)
         write_submitter(challenge_dir, chall)
+        write_solves(challenge_dir, chall)
         if requires_instance(challenge):
             shutil.copy('instance.py', challenge_dir)
 

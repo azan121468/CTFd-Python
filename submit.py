@@ -5,7 +5,6 @@ from urllib.parse import urljoin
 import requests
 import json
 import sys
-import pwn
 import os
 
 def load_config():
@@ -52,4 +51,4 @@ print(out)
 if 'Success' in json.dumps(out) or 'Correct' in json.dumps(out):
     if os.path.isfile('instance.py'):
         print("Stopping container")
-        pwn.process(["./instance.py", "kill"])
+        os.system("./instance.py kill"])

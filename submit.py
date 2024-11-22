@@ -5,6 +5,8 @@ from urllib.parse import urljoin
 import requests
 import json
 import sys
+import pwn
+import os
 
 def load_config():
     config = ConfigParser()
@@ -43,5 +45,11 @@ if len(sys.argv) < 2:
     flag_submission = input()
 else:
     flag_submission = sys.argv[1]
-print(submit_flag(api_url, <chall_id>, flag_submission))
 
+out = submit_flag(api_url, <chall_id>, flag_submission)
+print(out)
+
+if 'Success' in json.dumps(out) or 'Correct' in json.dumps(out):
+    if os.path.isfile('instance.py'):
+        print("Stopping container")
+        pwn.process(["./instance.py", "kill"])

@@ -39,7 +39,8 @@ def fetch_challenge_details(session, api_url, challenge_id, headers):
     return json.loads(response.text)["data"]
 
 def requires_instance(challenge):
-    if challenge['type'] == 'dynamic_docker':
+    print(challenge['type'])
+    if challenge['type'] in ['dynamic_docker', 'container']:
         return True
     else:
         return False
@@ -126,6 +127,14 @@ def write_solves(challenge_dir, chall_data):
     with open(submitter, 'w') as f:
         f.write(data)
 
+def write_instancer(challenge_dir, chall_data):
+    instancer = os.path.join(challenge_dir, 'instance.py')
+    with open('instance.py') as f:
+        data = f.read()
+    data = data.replace('<config-dir>', os.getcwd()).replace('<instance-id>', str(chall_data['id']))
+    with open(instancer, 'w') as f:
+        f.write(data)
+
 def load_config():
     config = ConfigParser()
     config.read("config.ini")
@@ -180,7 +189,7 @@ def main():
         write_submitter(challenge_dir, chall)
         write_solves(challenge_dir, chall)
         if requires_instance(challenge):
-            shutil.copy('instance.py', challenge_dir)
+            write_instancer(challenge_dir, chall)
 
     try:
         os.rmdir('images')

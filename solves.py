@@ -29,7 +29,7 @@ def get_solves(challenge_id):
         headers["Authorization"] = f"Token {token}"
     elif cookie:
         headers["Cookie"] = f"session={cookie}"
-    r = requests.get(f'https://demo.ctfd.io/api/v1/challenges/{challenge_id}/solves', headers=headers)
+    r = requests.get(f'{api_url}/challenges/{challenge_id}/solves', headers=headers)
     return json.loads(r.text.strip())
 
 print(json.dumps(get_solves(<chall_id>)))

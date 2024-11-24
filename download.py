@@ -135,14 +135,20 @@ def write_instancer(challenge_dir, chall_data):
     with open(instancer, 'w') as f:
         f.write(data)
 
+def write_hints(challenge_dir, chall_data):
+    hints = os.path.join(challenge_dir, 'hints.py')
+    with open('hints.py') as f:
+        data = f.read()
+    data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
+    with open(hints, 'w') as f:
+        f.write(data)
+
 def load_config():
     config = ConfigParser()
     config.read("config.ini")
     if not config.has_section("CTF"):
         raise ValueError("The config file is missing the 'CTF' section.")
     return config["CTF"]
-
-
 
 def main():
     ctf_config = load_config()
@@ -188,6 +194,8 @@ def main():
         handle_challenge_files(session, challenge, challenge_dir, base_url)
         write_submitter(challenge_dir, chall)
         write_solves(challenge_dir, chall)
+        write_hints(challenge_dir, chall)
+
         if requires_instance(challenge):
             write_instancer(challenge_dir, chall)
 

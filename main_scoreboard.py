@@ -34,7 +34,8 @@ def get_score_board(api_url):
         headers["Cookie"] = f"session={cookie}"
     r = requests.get(f'{api_url}/scoreboard', headers=headers)
     data = json.loads(r.text)
-    with open(os.path.dirname(os.path.realpath(__file__))+'scoreboard.txt', 'w') as f:
+    scoreboard_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'scoreboard.txt')
+    with open(scoreboard_file, 'w') as f:
         f.write(json.dumps(data))
     return data['data']
 

@@ -11,7 +11,8 @@ pf = log.success #replace with print if you don't have pwntools installed. pf = 
 
 def load_config():
     config = ConfigParser()
-    config.read("<config-dir>/config.ini")
+    config_file = os.path.join(r"<config-dir>", "config.ini")
+    config.read(config_file)
     if not config.has_section("CTF"):
         raise ValueError("The config file is missing the 'CTF' section.")
     return config["CTF"]

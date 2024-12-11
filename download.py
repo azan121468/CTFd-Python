@@ -93,7 +93,7 @@ def download_file(session, challenge, url, output_path, desc):
     total_size_in_bytes = int(response.headers.get('content-length', 0))
     size_in_mb = total_size_in_bytes / (1024**2)
     if size_in_mb > file_size_limit:
-        print("File size limit exceeds. not Downloading.")
+        print(f"File size limit exceeds. not Downloading. Size: {size_in_mb:.2f} MB")
         limit_failed[challenge['name']] = size_in_mb
         return
     progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True, desc=desc)

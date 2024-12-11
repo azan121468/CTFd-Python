@@ -220,6 +220,7 @@ except:
 write_ctf_readme(os.path.join(output_dir, 'challenges'), ctf_name, categories)
 logging.info("All done!")
 
-print("Following challenges were not downloaded due to file size limit")
-for name, size in limit_failed.items():
-    print(f"{name}: {size:.3f} MB")
+if limit_failed:
+    print("Following challenges were not downloaded due to file size limit")
+    for name, size in limit_failed.items():
+        print(f"{name}: {size:.3f} MB")

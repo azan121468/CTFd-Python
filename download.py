@@ -13,6 +13,28 @@ from configparser import ConfigParser
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
 
+def load_config():
+    config = ConfigParser()
+    config.read("config.ini")
+    if not config.has_section("CTF"):
+        raise ValueError("The config file is missing the 'CTF' section.")
+    return config["CTF"]
+
+ctf_config = load_config()
+
+base_url = ctf_config.get("url", "").strip()
+ctf_name = ctf_config.get("name", "").strip()
+output_dir = ctf_config.get("output", "").strip()
+token = ctf_config.get("token", "").strip()
+cookie = ctf_config.get("cookie", "").strip()
+try:
+    file_size_limit = int(ctf_config.get("fs_limit").strip())
+except:
+    print("Can't convert file size limit to integer. Ignoring!")
+
+if not base_url or not ctf_name or not output_dir:
+    raise ValueError("Missing required configuration: url, name, or output.")
+
 
 def slugify(text):
     text = re.sub(r"[\s]+", "-", text.lower())
@@ -39,7 +61,6 @@ def fetch_challenge_details(session, api_url, challenge_id, headers):
     return json.loads(response.text)["data"]
 
 def requires_instance(challenge):
-    print(challenge['type'])
     if challenge['type'] in ['dynamic_docker', 'container']:
         return True
     else:
@@ -65,10 +86,16 @@ def write_challenge_readme(challenge_dir, challenge):
     return readme_path
 
 
-
-def download_file(session, url, output_path, desc):
+limit_failed = {}
+def download_file(session, challenge, url, output_path, desc):
+    global limit_failed
     response = session.get(url, stream=True)
     total_size_in_bytes = int(response.headers.get('content-length', 0))
+    size_in_mb = total_size_in_bytes / (1024**2)
+    if size_in_mb > file_size_limit:
+        print("File size limit exceeds. not Downloading.")
+        limit_failed[challenge['name']] = size_in_mb
+        return
     progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True, desc=desc)
 
     with open(output_path, "wb") as f:
@@ -89,7 +116,7 @@ def handle_challenge_files(session, challenge, challenge_dir, base_url):
             file_url = urljoin(base_url, file)
             file_name = urlparse(file_url).path.split("/")[-1]
             local_path = os.path.join(files_dir, file_name)
-            download_file(session, file_url, local_path, file_name)
+            download_file(session, challenge, file_url, local_path, file_name)
 
 
 def write_ctf_readme(output_dir, ctf_name, categories):
@@ -143,70 +170,56 @@ def write_hints(challenge_dir, chall_data):
     with open(hints, 'w') as f:
         f.write(data)
 
-def load_config():
-    config = ConfigParser()
-    config.read("config.ini")
-    if not config.has_section("CTF"):
-        raise ValueError("The config file is missing the 'CTF' section.")
-    return config["CTF"]
+#main code starts here
+headers = {"Content-Type": "application/json"}
+if token:
+    headers["Authorization"] = f"Token {token}"
+elif cookie:
+    headers["Cookie"] = f"session={cookie}"
+else:
+    raise ValueError("You must provide either a token or a cookie in the config file.")
 
-def main():
-    ctf_config = load_config()
+initialize_directories(output_dir)
+api_url = urljoin(base_url, '/api/v1')
+session = requests.Session()
+challenges_data = fetch_challenges(api_url, headers)
 
-    base_url = ctf_config.get("url", "").strip()
-    ctf_name = ctf_config.get("name", "").strip()
-    output_dir = ctf_config.get("output", "").strip()
-    token = ctf_config.get("token", "").strip()
-    cookie = ctf_config.get("cookie", "").strip()
+categories = {}
+if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
+    print('Please provide correct token or session cookie in config file')
+    exit(-1)
+for chall in challenges_data['data']:
+    challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
+    category = challenge["category"]
+    categories.setdefault(category, []).append(challenge)
 
-    if not base_url or not ctf_name or not output_dir:
-        raise ValueError("Missing required configuration: url, name, or output.")
+    challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
+    if os.path.exists(challenge_dir):
+        print(f"Challenge already downloaded : {challenge['name']}")
+        continue
+    os.makedirs(challenge_dir, exist_ok=True)
 
-    headers = {"Content-Type": "application/json"}
-    if token:
-        headers["Authorization"] = f"Token {token}"
-    elif cookie:
-        headers["Cookie"] = f"session={cookie}"
-    else:
-        raise ValueError("You must provide either a token or a cookie in the config file.")
+    write_challenge_readme(challenge_dir, challenge)
+    handle_challenge_files(session, challenge, challenge_dir, base_url)
+    if challenge['name'] in limit_failed.keys():
+        # print("Since challenge was not downloaded removing its directory")
+        shutil.rmtree(challenge_dir)
+        continue
+    write_submitter(challenge_dir, chall)
+    write_solves(challenge_dir, chall)
+    write_hints(challenge_dir, chall)
 
-    initialize_directories(output_dir)
-    api_url = urljoin(base_url, '/api/v1')
-    session = requests.Session()
-    challenges_data = fetch_challenges(api_url, headers)
+    if requires_instance(challenge):
+        write_instancer(challenge_dir, chall)
 
-    categories = {}
-    if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
-        print('Please provide correct token or session cookie in config file')
-        exit(-1)
-    for chall in challenges_data['data']:
-        challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
-        category = challenge["category"]
-        categories.setdefault(category, []).append(challenge)
+try:
+    os.rmdir('images')
+except:
+    pass # directory not removed as it has files in it.
 
-        challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
-        if os.path.exists(challenge_dir):
-            print(f"Challenge already downloaded : {challenge['name']}")
-            continue
-        os.makedirs(challenge_dir, exist_ok=True)
+write_ctf_readme(os.path.join(output_dir, 'challenges'), ctf_name, categories)
+logging.info("All done!")
 
-        write_challenge_readme(challenge_dir, challenge)
-        handle_challenge_files(session, challenge, challenge_dir, base_url)
-        write_submitter(challenge_dir, chall)
-        write_solves(challenge_dir, chall)
-        write_hints(challenge_dir, chall)
-
-        if requires_instance(challenge):
-            write_instancer(challenge_dir, chall)
-
-    try:
-        os.rmdir('images')
-    except:
-        pass # directory not removed as it has files in it.
-
-    write_ctf_readme(os.path.join(output_dir, 'challenges'), ctf_name, categories)
-    logging.info("All done!")
-
-
-if __name__ == "__main__":
-    main()
+print("Following challenges were not downloaded due to file size limit")
+for name, size in limit_failed.items():
+    print(f"{name}: {size:.3f} MB")

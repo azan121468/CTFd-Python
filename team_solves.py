@@ -51,17 +51,24 @@ def get_solves(team_id):
     data = json.loads(r.text)
     return data
 
+if len(sys.argv) < 2:
+    print("Usage: python3 team_solves.py <team-name>")
+    exit(-1)
+
 team_name = sys.argv[1]
 team_id = get_team_id(team_name)
 out = get_solves(team_id)
 
-for i in range(len(out['data'])):
-    x = out['data'][i]
+try:
+    for i in range(len(out['data'])):
+        x = out['data'][i]
 
-    chall_name = x['challenge']['name']
-    chall_category = x['challenge']['category']
+        chall_name = x['challenge']['name']
+        chall_category = x['challenge']['category']
 
-    team_name = x['team']['name']
-    user_name = x['user']['name']
+        team_name = x['team']['name']
+        user_name = x['user']['name']
 
-    print(f'{user_name} @ {team_name:30} {chall_category:30} {chall_name:30}')
+        print(f'{user_name} @ {team_name:30} {chall_category:30} {chall_name:30}')
+except KeyError:
+    print(out)

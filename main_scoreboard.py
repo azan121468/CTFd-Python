@@ -8,9 +8,10 @@ import sys
 import os
 
 def load_config():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    config_path = os.path.join(script_dir, "config.ini")
     config = ConfigParser()
-    config_file = os.path.join(r"<config-dir>", "config.ini")
-    config.read(config_file)
+    config.read(config_path)
     if not config.has_section("CTF"):
         raise ValueError("The config file is missing the 'CTF' section.")
     return config["CTF"]

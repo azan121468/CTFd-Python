@@ -34,4 +34,7 @@ def get_solves(challenge_id):
     r = requests.get(f'{api_url}/challenges/{challenge_id}/solves', headers=headers)
     return json.loads(r.text.strip())
 
-print(json.dumps(get_solves(<chall_id>)))
+solves = get_solves(<chall_id>)['data']
+
+for record in solves:
+    print(f"{record['name']:30} {record['date']}")

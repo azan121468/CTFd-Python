@@ -88,6 +88,5 @@ Removes all the downloaded CTF data.
 ```bash
 ./solves.py
 ```
-- Retrieves all solves for the current challenge in JSON format.
-- Output can be piped to `jq` for further parsing.
+- Retrieves all solves for the current challenge.
 

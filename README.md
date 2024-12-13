@@ -1,44 +1,93 @@
-files to be run from main folder:
-	blood_announcer.py:
-	usage: ./blood_announcer.py 
-	this script will get blood status of all challenges. If challenge is blooded it will report which user from which team solves the challenge. If challenge is not blooded it will report chall is not blooded
+# CTF Automation Scripts
 
-	cleanup.sh:
-	remove all the downloaded ctf data.
-	
-	config.ini:
-	put CTF token and file size limit in this file. automation will pick variable from this file.
+This repository contains various scripts to help automate tasks for managing and participating in Capture The Flag (CTF) competitions. Below is a detailed guide for each script and its usage.
 
-	download.py:
-	usage: ./download.py
-	download all the challenge from the server.
-	When new challenges release, rerun. it will only fetch the new challenge
-	
-	main_scoreboard.py:
-	usage: ./main_scoreboard.py <limit>
-	get current scoreboard situation. will display team name and points.
-	limit is used to get top and bottom team.
-	for example:
-	./main_scoreboard.py 3
-	this will show top three teams.
-	./main_scoreboard.py -3
-	this will show last three team.
-	
-	team_solves.py
-	usage: ./team_solves.py <team-name>
-	This will get all solves of the target team with member name, challenge name and category.
-	
-file to be run from challenge folder:
-	hints.py
-	usage: ./hints.py
-	this will get and display all the released hints of the current challenge
-	
-	instance.py
-	usage: ./instance.py
-	this file is only present in the challenges which required remote instance.
-	this script is use to start the remote container of the challenge and gives its info(IP and Port, [URL for web challs]).
-	use "./instance.py kill" to stop the container as there is a max containers spawn limit after which you will not be able to spawn the container.
-	
-	solves.py
-	usage: ./solves.py
-	get all solves of current challenge in json format. pipe to jq and parse manually.
+## Files to Run from the Main Folder
+
+### blood_announcer.py
+**Usage:**
+```bash
+./blood_announcer.py
+```
+- Retrieves the blood status of all challenges.
+- If a challenge is blooded, it reports the user and team who solved it.
+- If a challenge is not blooded, it reports that the challenge is not blooded.
+
+### cleanup.sh
+**Function:**
+Removes all the downloaded CTF data.
+**Usage:**
+```bash
+./cleanup.sh
+```
+
+### config.ini
+- Contains:
+  - CTF token
+  - File size limit
+- Automation scripts will pick variables from this file.
+
+### download.py
+**Usage:**
+```bash
+./download.py
+```
+- Downloads all the challenges from the server.
+- On new challenge releases, rerun the script to fetch only the new challenges.
+
+### main_scoreboard.py
+**Usage:**
+```bash
+./main_scoreboard.py <limit>
+```
+- Displays the current scoreboard situation with team names and points.
+- The `<limit>` parameter specifies the number of teams:
+  - Positive numbers show the top teams (e.g., `3` for top 3).
+  - Negative numbers show the bottom teams (e.g., `-3` for last 3).
+
+**Examples:**
+```bash
+./main_scoreboard.py 3    # Shows the top 3 teams
+./main_scoreboard.py -3   # Shows the last 3 teams
+```
+
+### team_solves.py
+**Usage:**
+```bash
+./team_solves.py <team-name>
+```
+- Displays all solves of the specified team, including:
+  - Member name
+  - Challenge name
+  - Challenge category
+
+## Files to Run from the Challenge Folder
+
+### hints.py
+**Usage:**
+```bash
+./hints.py
+```
+- Retrieves and displays all released hints for the current challenge.
+
+### instance.py
+**Usage:**
+```bash
+./instance.py
+```
+- Starts the remote container for challenges requiring remote instances.
+- Provides container info (IP, Port, or URL for web challenges).
+- Use the following command to stop the container:
+  ```bash
+  ./instance.py kill
+  ```
+- Note: There is a limit on the number of containers you can spawn.
+
+### solves.py
+**Usage:**
+```bash
+./solves.py
+```
+- Retrieves all solves for the current challenge in JSON format.
+- Output can be piped to `jq` for further parsing.
+

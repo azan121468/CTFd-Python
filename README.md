@@ -5,9 +5,7 @@ files to be run from main folder:
 
 	cleanup.sh:
 	remove all the downloaded ctf data.
-	!!!!!!!!!!!! Warning !!!!!!!!!!!!
-	be careful, as i didn't forogot to add check of confirmation so you will lost all the data including solve script if you run it by mistake!!!!!!!!!
-
+	
 	config.ini:
 	put CTF token and file size limit in this file. automation will pick variable from this file.
 

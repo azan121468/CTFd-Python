@@ -42,7 +42,7 @@ def submit_flag(api_url, chall_id, flag):
     return json.loads(r.text)
 
 if len(sys.argv) < 2:
-    flag_submission = input()
+    flag_submission = input('Enter the flag: ')
 else:
     flag_submission = sys.argv[1]
 

@@ -90,3 +90,6 @@ Removes all the downloaded CTF data.
 ```
 - Retrieves all solves for the current challenge.
 
+# Credits
+Credits go to https://github.com/jselliott/ctfd_download_python/blob/main/download.py.
+I use this script as a baseline along with manual investigation of API calls from a CTF instance.

@@ -124,7 +124,6 @@ def write_ctf_readme(output_dir, ctf_name, categories):
     logging.info("Writing main CTF readme...")
     with open(readme_path, "w") as ctf_readme:
         ctf_readme.write(f"# {ctf_name}\n\n")
-        ctf_readme.write("## About\n\n[insert description here]\n\n")
         ctf_readme.write("## Challenges\n\n")
         
         first_category = True
@@ -138,32 +137,32 @@ def write_ctf_readme(output_dir, ctf_name, categories):
                 ctf_readme.write(f"* [{chall['name']}](<{chall_path}>)\n")
     return readme_path
 
-def write_submitter(challenge_dir, chall_data):
-    submitter = os.path.join(challenge_dir, 'submit.py')
+def write_submitter(helper_folder, chall_data):
+    submitter = os.path.join(helper_folder, 'submit.py')
     with open('submit.py') as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
     with open(submitter, 'w') as f:
         f.write(data)
 
-def write_solves(challenge_dir, chall_data):
-    submitter = os.path.join(challenge_dir, 'solves.py')
+def write_solves(helper_folder, chall_data):
+    submitter = os.path.join(helper_folder, 'solves.py')
     with open('solves.py') as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
     with open(submitter, 'w') as f:
         f.write(data)
 
-def write_instancer(challenge_dir, chall_data):
-    instancer = os.path.join(challenge_dir, 'instance.py')
+def write_instancer(helper_folder, chall_data):
+    instancer = os.path.join(helper_folder, 'instance.py')
     with open('instance.py') as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<instance-id>', str(chall_data['id']))
     with open(instancer, 'w') as f:
         f.write(data)
 
-def write_hints(challenge_dir, chall_data):
-    hints = os.path.join(challenge_dir, 'hints.py')
+def write_hints(helper_folder, chall_data):
+    hints = os.path.join(helper_folder, 'hints.py')
     with open('hints.py') as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
@@ -205,12 +204,16 @@ for chall in challenges_data['data']:
         # print("Since challenge was not downloaded removing its directory")
         shutil.rmtree(challenge_dir)
         continue
-    write_submitter(challenge_dir, chall)
-    write_solves(challenge_dir, chall)
-    write_hints(challenge_dir, chall)
+
+    #in challenge folder, we will create helper folder which will contain all the scripts
+    helper_folder = os.path.join(challenge_dir, f"helper_{os.urandom(3).hex()}")
+    os.mkdir(helper_folder)
+    write_submitter(helper_folder, chall)
+    write_solves(helper_folder, chall)
+    write_hints(helper_folder, chall)
 
     if requires_instance(challenge):
-        write_instancer(challenge_dir, chall)
+        write_instancer(helper_folder, chall)
 
 try:
     os.rmdir('images')

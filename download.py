@@ -43,13 +43,6 @@ def slugify(text):
     text = re.sub(r"^-|-$", "", text)
     return text
 
-
-def initialize_directories(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    for d in ["challenges", "images"]:
-        os.makedirs(os.path.join(output_dir, d), exist_ok=True)
-
-
 def fetch_challenges(api_url, headers):
     logging.info(f"Connecting to API: {api_url}")
     response = requests.get(f"{api_url}/challenges", headers=headers)
@@ -60,16 +53,18 @@ def fetch_challenge_details(session, api_url, challenge_id, headers):
     response = session.get(f"{api_url}/challenges/{challenge_id}", headers=headers)
     return json.loads(response.text)["data"]
 
+
 def requires_instance(challenge):
     if challenge['type'] in ['dynamic_docker', 'container']:
         return True
     else:
         return False
 
+
 def write_challenge_readme(challenge_dir, challenge):
-    readme_path = os.path.join(challenge_dir, "README.md")
+    readme_path = os.path.join(challenge_dir, f"README_{os.urandom(3).hex()}.md")
     logging.info(f"Creating challenge readme: {challenge['name']}")
-    with open(readme_path, "w") as chall_readme:
+    with open(readme_path, "w", encoding="utf-8") as chall_readme:
         chall_readme.write(f"# {challenge['name']}\n\n")
         # chall_readme.write(f"## Challenge ID\n\n{challenge['id']}\n\n")
         chall_readme.write(f"## Description\n\n{challenge['description']}\n\n")
@@ -108,7 +103,9 @@ def download_file(session, challenge, url, output_path, desc):
 
 def handle_challenge_files(session, challenge, challenge_dir, base_url):
     challenge_files = challenge.get("files", [])
-    if challenge_files: # if challenge has files, only then create the files directory and put all the files there
+    if challenge_files: # If challenge has files, we will put them in the challenge directory which we have created
+        '''Uncomment the lines given below, If you want to put downloaded files into the "files" folder instead of main folder'''
+        files_dir = challenge_dir
         files_dir = os.path.join(challenge_dir, "files")
         os.makedirs(files_dir, exist_ok=True)
 
@@ -122,7 +119,7 @@ def handle_challenge_files(session, challenge, challenge_dir, base_url):
 def write_ctf_readme(output_dir, ctf_name, categories):
     readme_path = os.path.join(output_dir, "README.md")
     logging.info("Writing main CTF readme...")
-    with open(readme_path, "w") as ctf_readme:
+    with open(readme_path, "w", encoding="utf-8") as ctf_readme:
         ctf_readme.write(f"# {ctf_name}\n\n")
         ctf_readme.write("## Challenges\n\n")
         
@@ -137,37 +134,42 @@ def write_ctf_readme(output_dir, ctf_name, categories):
                 ctf_readme.write(f"* [{chall['name']}](<{chall_path}>)\n")
     return readme_path
 
+
 def write_submitter(helper_folder, chall_data):
     submitter = os.path.join(helper_folder, 'submit.py')
-    with open('submit.py') as f:
+    with open('submit.py', encoding="utf-8") as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
-    with open(submitter, 'w') as f:
+    with open(submitter, 'w', encoding="utf-8") as f:
         f.write(data)
+
 
 def write_solves(helper_folder, chall_data):
     submitter = os.path.join(helper_folder, 'solves.py')
-    with open('solves.py') as f:
+    with open('solves.py', encoding="utf-8") as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
-    with open(submitter, 'w') as f:
+    with open(submitter, 'w', encoding="utf-8") as f:
         f.write(data)
+
 
 def write_instancer(helper_folder, chall_data):
     instancer = os.path.join(helper_folder, 'instance.py')
-    with open('instance.py') as f:
+    with open('instance.py', encoding="utf-8") as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<instance-id>', str(chall_data['id']))
-    with open(instancer, 'w') as f:
+    with open(instancer, 'w', encoding="utf-8") as f:
         f.write(data)
+
 
 def write_hints(helper_folder, chall_data):
     hints = os.path.join(helper_folder, 'hints.py')
-    with open('hints.py') as f:
+    with open('hints.py', encoding="utf-8") as f:
         data = f.read()
     data = data.replace('<config-dir>', os.getcwd()).replace('<chall_id>', str(chall_data['id']))
-    with open(hints, 'w') as f:
+    with open(hints, 'w', encoding="utf-8") as f:
         f.write(data)
+
 
 #main code starts here
 headers = {"Content-Type": "application/json"}
@@ -178,7 +180,6 @@ elif cookie:
 else:
     raise ValueError("You must provide either a token or a cookie in the config file.")
 
-initialize_directories(output_dir)
 api_url = urljoin(base_url, '/api/v1')
 session = requests.Session()
 challenges_data = fetch_challenges(api_url, headers)
@@ -192,7 +193,10 @@ for chall in challenges_data['data']:
     category = challenge["category"]
     categories.setdefault(category, []).append(challenge)
 
-    challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
+    #We will puts all challenges categories folders in same directory as our automation files.
+    challenge_dir = os.path.join(output_dir, category, slugify(challenge["name"]))
+    #If you want to puts all categories folders in a new folder named "challenges" uncomment the line given below
+    # challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
     if os.path.exists(challenge_dir):
         print(f"Challenge already downloaded : {challenge['name']}")
         continue
@@ -215,12 +219,7 @@ for chall in challenges_data['data']:
     if requires_instance(challenge):
         write_instancer(helper_folder, chall)
 
-try:
-    os.rmdir('images')
-except:
-    pass # directory not removed as it has files in it.
-
-write_ctf_readme(os.path.join(output_dir, 'challenges'), ctf_name, categories)
+write_ctf_readme(output_dir, ctf_name, categories)
 logging.info("All done!")
 
 if limit_failed:

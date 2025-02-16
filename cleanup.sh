@@ -1,11 +1,18 @@
 #!/bin/bash
 
-echo "Are you sure you want to delete 'images', 'challenges', and 'README.md'? (y/n)"
+echo "Are you sure you want to delete all challenges data? (y/n)"
 read -r confirmation
 
 if [[ "$confirmation" == "y" || "$confirmation" == "Y" ]]; then
-    rm -rf images challenges README.md
-    echo "Files and directories deleted."
+    dirs=$(find . -maxdepth 1 -mindepth 1 -type d)
+    for i in $dirs; do 
+        echo "Deleting "$i
+        rm -rf $i
+    done
+    if [ -f "README.md" ]; then
+        echo "Deleting README.md"
+        rm README.md
+    fi
 else
     echo "Deletion canceled."
 fi

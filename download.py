@@ -104,9 +104,9 @@ def download_file(session, challenge, url, output_path, desc):
 def handle_challenge_files(session, challenge, challenge_dir, base_url):
     challenge_files = challenge.get("files", [])
     if challenge_files: # If challenge has files, we will put them in the challenge directory which we have created
-        '''Uncomment the lines given below, If you want to put downloaded files into the "files" folder instead of main folder'''
         files_dir = challenge_dir
-        files_dir = os.path.join(challenge_dir, "files")
+        '''Uncomment the lines given below, If you want to put downloaded files into the "files" folder instead of main folder'''
+        # files_dir = os.path.join(challenge_dir, "files")
         os.makedirs(files_dir, exist_ok=True)
 
         for file in challenge.get("files", []):

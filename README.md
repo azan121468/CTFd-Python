@@ -90,6 +90,14 @@ Removes all the downloaded CTF data.
 ```
 - Retrieves all solves for the current challenge.
 
+### fix_path.py
+**Usage:**
+```bash
+./fix_path.py
+```
+- Change the hardcoded path in all helpers script according to the OS on which the script is running.
+- This allows to switch between operating systems or directory without affecting the helper scripts.
+
 # Credits
 Credits go to https://github.com/jselliott/ctfd_download_python/blob/main/download.py.
 I use this script as a baseline along with manual investigation of API calls from a CTF instance.

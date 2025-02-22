@@ -1,14 +1,15 @@
 #!/usr/bin/python3
 
-import requests
-import json
-import logging
 import os
-from urllib.parse import urljoin, urlparse
 import re
+import json
 import shutil
+import logging
+import requests
+import unicodedata
 from tqdm import tqdm
 from configparser import ConfigParser
+from urllib.parse import urljoin, urlparse
 
 logging.basicConfig()
 logging.root.setLevel(logging.INFO)
@@ -37,11 +38,11 @@ if not base_url or not ctf_name or not output_dir:
 
 
 def slugify(text):
-    text = re.sub(r"[\s]+", "-", text.lower())
-    text = re.sub(r"[-]{2,}", "-", text)
-    text = re.sub(r"[^a-z0-9\-]", "", text)
-    text = re.sub(r"^-|-$", "", text)
-    return text
+    text = re.sub(r"[\/:*?\"<>|]", "_", text)  # Replace invalid filename characters with "_"
+    text = re.sub(r"[\s]+", "-", text.strip())  # Replace spaces with dashes
+    text = re.sub(r"[-]{2,}", "-", text)  # Remove consecutive dashes
+    text = re.sub(r"^-|-$", "", text)  # Trim dashes from start/end
+    return text  # Retain Unicode characters
 
 def fetch_challenges(api_url, headers):
     logging.info(f"Connecting to API: {api_url}")
@@ -63,7 +64,7 @@ def requires_instance(challenge):
 
 def write_challenge_readme(challenge_dir, challenge):
     readme_path = os.path.join(challenge_dir, f"README_{os.urandom(3).hex()}.md")
-    logging.info(f"Creating challenge readme: {challenge['name']}")
+    logging.info(f"Creating challenge readme: {challenge['name']} @ {challenge['category']}")
     with open(readme_path, "w", encoding="utf-8") as chall_readme:
         chall_readme.write(f"# {challenge['name']}\n\n")
         # chall_readme.write(f"## Challenge ID\n\n{challenge['id']}\n\n")
@@ -188,36 +189,50 @@ categories = {}
 if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
     print('Please provide correct token or session cookie in config file')
     exit(-1)
+
+# Identify already downloaded challenges
+downloaded_chall_ids = []
+for i, challenge in enumerate(challenges_data['data']):
+    path = os.path.join('.', challenge['category'], slugify(challenge['name']))
+    if os.path.exists(path):
+        print(f"Challenge already downloaded : {challenge['category']} @ {challenge['name']} ")
+        downloaded_chall_ids.append(challenge['id'])
+
+# Remove already downloaded challenges from challenges_data['data']
+challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
+
+breakpoint()
+# Main processing loop
 for chall in challenges_data['data']:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
-    category = challenge["category"]
+    category = challenge['category']
     categories.setdefault(category, []).append(challenge)
 
-    #We will puts all challenges categories folders in same directory as our automation files.
     challenge_dir = os.path.join(output_dir, category, slugify(challenge["name"]))
-    #If you want to puts all categories folders in a new folder named "challenges" uncomment the line given below
-    # challenge_dir = os.path.join(output_dir, "challenges", category, slugify(challenge["name"]))
+    
     if os.path.exists(challenge_dir):
         print(f"Challenge already downloaded : {challenge['name']}")
         continue
+    
     os.makedirs(challenge_dir, exist_ok=True)
 
     write_challenge_readme(challenge_dir, challenge)
     handle_challenge_files(session, challenge, challenge_dir, base_url)
+
     if challenge['name'] in limit_failed.keys():
-        # print("Since challenge was not downloaded removing its directory")
         shutil.rmtree(challenge_dir)
         continue
 
-    #in challenge folder, we will create helper folder which will contain all the scripts
     helper_folder = os.path.join(challenge_dir, f"helper_{os.urandom(3).hex()}")
     os.mkdir(helper_folder)
+
     write_submitter(helper_folder, chall)
     write_solves(helper_folder, chall)
     write_hints(helper_folder, chall)
 
     if requires_instance(challenge):
         write_instancer(helper_folder, chall)
+
 
 write_ctf_readme(output_dir, ctf_name, categories)
 logging.info("All done!")

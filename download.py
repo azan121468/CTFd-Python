@@ -201,7 +201,6 @@ for i, challenge in enumerate(challenges_data['data']):
 # Remove already downloaded challenges from challenges_data['data']
 challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
 
-breakpoint()
 # Main processing loop
 for chall in challenges_data['data']:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)

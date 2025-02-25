@@ -84,22 +84,27 @@ def write_challenge_readme(challenge_dir, challenge):
 
 limit_failed = {}
 def download_file(session, challenge, url, output_path, desc):
-    global limit_failed
-    response = session.get(url, stream=True)
-    total_size_in_bytes = int(response.headers.get('content-length', 0))
-    size_in_mb = total_size_in_bytes / (1024**2)
-    if size_in_mb > file_size_limit:
-        print(f"File size limit exceeds. not Downloading. Size: {size_in_mb:.2f} MB")
-        limit_failed[challenge['name']] = size_in_mb
-        return
-    progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True, desc=desc)
+    try:
+        global limit_failed
+        response = session.get(url, stream=True)
+        total_size_in_bytes = int(response.headers.get('content-length', 0))
+        size_in_mb = total_size_in_bytes / (1024**2)
+        if size_in_mb > file_size_limit:
+            print(f"File size limit exceeds. not Downloading. Size: {size_in_mb:.2f} MB")
+            limit_failed[challenge['name']] = size_in_mb
+            return
+        progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True, desc=desc)
 
-    with open(output_path, "wb") as f:
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                progress_bar.update(len(chunk))
-                f.write(chunk)
-    progress_bar.close()
+        with open(output_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    progress_bar.update(len(chunk))
+                    f.write(chunk)
+        progress_bar.close()
+    except KeyboardInterrupt:
+        print("CTRL-C detected while downloading files. Exiting!")
+        shutil.rmtree(challenge_dir)
+        exit(-1)
 
 
 def handle_challenge_files(session, challenge, challenge_dir, base_url):

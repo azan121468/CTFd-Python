@@ -206,6 +206,9 @@ for i, challenge in enumerate(challenges_data['data']):
 # Remove already downloaded challenges from challenges_data['data']
 challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
 
+#Now sort challenge data first by category and then by points before downloading
+challenges_data['data'] = sorted(challenges_data['data'], key=lambda x: (x['category'], x['value']))
+
 # Main processing loop
 for chall in challenges_data['data']:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)

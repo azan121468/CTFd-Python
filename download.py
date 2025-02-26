@@ -131,13 +131,11 @@ def write_ctf_readme(output_dir, ctf_name, categories):
         
         first_category = True
         for category, challenges in categories.items():
-            if not first_category:
-                ctf_readme.write("\n")  # Add a space before new category
-            first_category = False
-            ctf_readme.write(f"### {category}\n\n")
+            ctf_readme.write(f"### {category}\n")
             for chall in challenges:
                 chall_path = f"challenges/{chall['category']}/{slugify(chall['name'])}/"
                 ctf_readme.write(f"* [{chall['name']}](<{chall_path}>)\n")
+            ctf_readme.write("\n")
     return readme_path
 
 
@@ -203,18 +201,27 @@ for i, challenge in enumerate(challenges_data['data']):
         print(f"Challenge already downloaded : {challenge['category']} @ {challenge['name']} ")
         downloaded_chall_ids.append(challenge['id'])
 
-# Remove already downloaded challenges from challenges_data['data']
-challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
-
 #Now sort challenge data first by category and then by points before downloading
 challenges_data['data'] = sorted(challenges_data['data'], key=lambda x: (x['category'], x['value']))
+
+categories = {}
+
+for x in challenges_data['data']:
+    if x['category'] in categories.keys():
+        categories[x['category']].append(x)
+    else:
+        categories[x['category']] = [x]
+
+write_ctf_readme(output_dir, ctf_name, categories)
+
+# Remove already downloaded challenges from challenges_data['data']
+challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
 
 # Main processing loop
 for chall in challenges_data['data']:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
     category = challenge['category']
-    categories.setdefault(category, []).append(challenge)
-
+    
     challenge_dir = os.path.join(output_dir, category, slugify(challenge["name"]))
     
     if os.path.exists(challenge_dir):
@@ -240,8 +247,6 @@ for chall in challenges_data['data']:
     if requires_instance(challenge):
         write_instancer(helper_folder, chall)
 
-
-write_ctf_readme(output_dir, ctf_name, categories)
 logging.info("All done!")
 
 if limit_failed:

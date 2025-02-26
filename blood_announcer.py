@@ -25,8 +25,10 @@ def get_solves(args):
     except Exception as e:
         return {"error": str(e), "challenge_id": challenge_id}
 
-def process_challenge(challenge):
+def process_challenge(args):
+    api_url, headers, challenge = args  # Correct argument unpacking
     chall_category, chall_id, chall_name = challenge['category'], challenge['id'], challenge['name']
+    
     solves_data = get_solves((chall_id, api_url, headers)).get('data', [])
 
     if not solves_data:
@@ -58,6 +60,7 @@ if __name__ == "__main__":
     chall_data = json.loads(r.text)['data']
 
     # Use multiprocessing to process challenges
+    chall_data = [(api_url, headers, challenge) for challenge in chall_data]
     with Pool(cpu_count()) as pool:
         results = pool.map(process_challenge, chall_data)
 

@@ -220,6 +220,8 @@ def write_hints(helper_folder, chall_data):
 
 
 def classify_by_categories(challenges_data):
+    categories = {}
+    
     for x in challenges_data['data']:
         if x['category'] in categories.keys():
             categories[x['category']].append(x)
@@ -242,7 +244,6 @@ api_url = urljoin(base_url, '/api/v1')
 session = requests.Session()
 challenges_data = fetch_challenges(api_url, headers)
 
-categories = {}
 if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
     print('Please provide correct token or session cookie in config file')
     exit(-1)

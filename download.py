@@ -44,6 +44,21 @@ def slugify(text):
     text = re.sub(r"^-|-$", "", text)  # Trim dashes from start/end
     return text  # Retain Unicode characters
 
+
+def remove_already_downloaded_challs(challenges_data):
+    downloaded_chall_ids = []
+    for i, challenge in enumerate(challenges_data['data']):
+        path = os.path.join('.', challenge['category'], slugify(challenge['name']))
+        if os.path.exists(path):
+            print(f"Challenge already downloaded : {challenge['category']} @ {challenge['name']} ")
+            downloaded_chall_ids.append(challenge['id'])
+    
+    # Remove already downloaded challenges from challenges_data['data']
+    challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
+
+    return challenges_data
+
+
 def fetch_challenges(api_url, headers):
     logging.info(f"Connecting to API: {api_url}")
     response = requests.get(f"{api_url}/challenges", headers=headers)
@@ -83,7 +98,7 @@ def write_challenge_readme(challenge_dir, challenge):
 
 
 limit_failed = {}
-def download_file(session, challenge, url, output_path, desc):
+def download_file(session, challenge, challenge_dir, url, output_path, desc):
     try:
         global limit_failed
         response = session.get(url, stream=True)
@@ -119,7 +134,36 @@ def handle_challenge_files(session, challenge, challenge_dir, base_url):
             file_url = urljoin(base_url, file)
             file_name = urlparse(file_url).path.split("/")[-1]
             local_path = os.path.join(files_dir, file_name)
-            download_file(session, challenge, file_url, local_path, file_name)
+            download_file(session, challenge, challenge_dir, file_url, local_path, file_name)
+
+
+def download_challenge(challenge):
+    category = challenge['category']
+    
+    challenge_dir = os.path.join(output_dir, category, slugify(challenge["name"]))
+    
+    if os.path.exists(challenge_dir):
+        print(f"Challenge already downloaded : {challenge['name']}")
+        return
+    
+    os.makedirs(challenge_dir, exist_ok=True)
+
+    write_challenge_readme(challenge_dir, challenge)
+    handle_challenge_files(session, challenge, challenge_dir, base_url)
+
+    if challenge['name'] in limit_failed.keys():
+        shutil.rmtree(challenge_dir)
+        return
+
+    helper_folder = os.path.join(challenge_dir, f"helper_{os.urandom(3).hex()}")
+    os.mkdir(helper_folder)
+
+    write_submitter(helper_folder, chall)
+    write_solves(helper_folder, chall)
+    write_hints(helper_folder, chall)
+
+    if requires_instance(challenge):
+        write_instancer(helper_folder, chall)
 
 
 def write_ctf_readme(output_dir, ctf_name, categories):
@@ -175,6 +219,16 @@ def write_hints(helper_folder, chall_data):
         f.write(data)
 
 
+def classify_by_categories(challenges_data):
+    for x in challenges_data['data']:
+        if x['category'] in categories.keys():
+            categories[x['category']].append(x)
+        else:
+            categories[x['category']] = [x]
+
+    return categories
+
+
 #main code starts here
 headers = {"Content-Type": "application/json"}
 if token:
@@ -193,59 +247,19 @@ if 'message' in challenges_data.keys() and challenges_data['message'].index('wro
     print('Please provide correct token or session cookie in config file')
     exit(-1)
 
-# Identify already downloaded challenges
-downloaded_chall_ids = []
-for i, challenge in enumerate(challenges_data['data']):
-    path = os.path.join('.', challenge['category'], slugify(challenge['name']))
-    if os.path.exists(path):
-        print(f"Challenge already downloaded : {challenge['category']} @ {challenge['name']} ")
-        downloaded_chall_ids.append(challenge['id'])
+# Identify and remove already downloaded challenges
+challenges_data = remove_already_downloaded_challs(challenges_data)
 
-#Now sort challenge data first by category and then by points before downloading
+# Sort and classify by categories and points
 challenges_data['data'] = sorted(challenges_data['data'], key=lambda x: (x['category'], x['value']))
-
-categories = {}
-
-for x in challenges_data['data']:
-    if x['category'] in categories.keys():
-        categories[x['category']].append(x)
-    else:
-        categories[x['category']] = [x]
+categories = classify_by_categories(challenges_data)
 
 write_ctf_readme(output_dir, ctf_name, categories)
-
-# Remove already downloaded challenges from challenges_data['data']
-challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
 
 # Main processing loop
 for chall in challenges_data['data']:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
-    category = challenge['category']
-    
-    challenge_dir = os.path.join(output_dir, category, slugify(challenge["name"]))
-    
-    if os.path.exists(challenge_dir):
-        print(f"Challenge already downloaded : {challenge['name']}")
-        continue
-    
-    os.makedirs(challenge_dir, exist_ok=True)
-
-    write_challenge_readme(challenge_dir, challenge)
-    handle_challenge_files(session, challenge, challenge_dir, base_url)
-
-    if challenge['name'] in limit_failed.keys():
-        shutil.rmtree(challenge_dir)
-        continue
-
-    helper_folder = os.path.join(challenge_dir, f"helper_{os.urandom(3).hex()}")
-    os.mkdir(helper_folder)
-
-    write_submitter(helper_folder, chall)
-    write_solves(helper_folder, chall)
-    write_hints(helper_folder, chall)
-
-    if requires_instance(challenge):
-        write_instancer(helper_folder, chall)
+    download_challenge(challenge)
 
 logging.info("All done!")
 

@@ -47,14 +47,14 @@ def slugify(text):
 
 def remove_already_downloaded_challs(challenges_data):
     downloaded_chall_ids = []
-    for i, challenge in enumerate(challenges_data['data']):
+    for i, challenge in enumerate(challenges_data):
         path = os.path.join('.', challenge['category'], slugify(challenge['name']))
         if os.path.exists(path):
             print(f"Challenge already downloaded : {challenge['category']} @ {challenge['name']} ")
             downloaded_chall_ids.append(challenge['id'])
     
-    # Remove already downloaded challenges from challenges_data['data']
-    challenges_data['data'] = [chall for chall in challenges_data['data'] if chall['id'] not in downloaded_chall_ids]
+    # Remove already downloaded challenges from challenges_data
+    challenges_data = [chall for chall in challenges_data if chall['id'] not in downloaded_chall_ids]
 
     return challenges_data
 
@@ -222,9 +222,9 @@ def write_hints(helper_folder, chall_data):
 def classify_by_categories(challenges_data):
     categories = {}
     
-    for x in challenges_data['data']:
+    for x in challenges_data:
         chall_category = x['category']
-        
+
         if chall_category in categories.keys():
             categories[chall_category].append(x)
         else:
@@ -244,9 +244,10 @@ else:
 
 api_url = urljoin(base_url, '/api/v1')
 session = requests.Session()
-challenges_data = fetch_challenges(api_url, headers)
+challenges = fetch_challenges(api_url, headers)
+challenges_data = challenges['data']
 
-if 'message' in challenges_data.keys() and challenges_data['message'].index('wrong credentials') > -1:
+if 'message' in challenges.keys() and challenges['message'].index('wrong credentials') > -1:
     print('Please provide correct token or session cookie in config file')
     exit(-1)
 
@@ -254,13 +255,13 @@ if 'message' in challenges_data.keys() and challenges_data['message'].index('wro
 challenges_data = remove_already_downloaded_challs(challenges_data)
 
 # Sort and classify by categories and points
-challenges_data['data'] = sorted(challenges_data['data'], key=lambda x: (x['category'], x['value']))
+challenges_data = sorted(challenges_data, key=lambda x: (x['category'], x['value']))
 categories = classify_by_categories(challenges_data)
 
 write_ctf_readme(output_dir, ctf_name, categories)
 
 # Main processing loop
-for chall in challenges_data['data']:
+for chall in challenges_data:
     challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
     download_challenge(challenge)
 

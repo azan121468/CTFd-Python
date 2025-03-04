@@ -223,10 +223,12 @@ def classify_by_categories(challenges_data):
     categories = {}
     
     for x in challenges_data['data']:
-        if x['category'] in categories.keys():
-            categories[x['category']].append(x)
+        chall_category = x['category']
+        
+        if chall_category in categories.keys():
+            categories[chall_category].append(x)
         else:
-            categories[x['category']] = [x]
+            categories[chall_category] = [x]
 
     return categories
 

@@ -251,14 +251,14 @@ if 'message' in challenges.keys() and challenges['message'].index('wrong credent
     print('Please provide correct token or session cookie in config file')
     exit(-1)
 
-# Identify and remove already downloaded challenges
-challenges_data = remove_already_downloaded_challs(challenges_data)
-
 # Sort and classify by categories and points
 challenges_data = sorted(challenges_data, key=lambda x: (x['category'], x['value']))
 categories = classify_by_categories(challenges_data)
 
 write_ctf_readme(output_dir, ctf_name, categories)
+
+# Identify and remove already downloaded challenges
+challenges_data = remove_already_downloaded_challs(challenges_data)
 
 # Main processing loop
 for chall in challenges_data:

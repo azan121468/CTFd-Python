@@ -2,10 +2,12 @@
 
 import os
 import re
+import sys
 import json
 import shutil
 import logging
 import requests
+import argparse
 import unicodedata
 from tqdm import tqdm
 from configparser import ConfigParser
@@ -82,8 +84,8 @@ def write_challenge_readme(challenge_dir, challenge):
     logging.info(f"Creating challenge readme: {challenge['name']} @ {challenge['category']}")
     with open(readme_path, "w", encoding="utf-8") as chall_readme:
         chall_readme.write(f"# {challenge['name']}\n\n")
-        # chall_readme.write(f"## Challenge ID\n\n{challenge['id']}\n\n")
-        chall_readme.write(f"## Description\n\n{challenge['description']}\n\n")
+        # chall_readme.write(f"## Challenge ID\n\n{challenge.get('id', 'N/A')}\n\n")
+        chall_readme.write(f"## Description\n\n{challenge.get('description', 'N/A')}\n\n")
         chall_readme.write(f"## Points\n\n{challenge.get('value', 'N/A')}\n\n")
         
         chall_readme.write(f"## Requires Instance\n\n{'Yes' if requires_instance(challenge) else 'No'}\n\n")
@@ -158,12 +160,12 @@ def download_challenge(challenge):
     helper_folder = os.path.join(challenge_dir, f"helper_{os.urandom(3).hex()}")
     os.mkdir(helper_folder)
 
-    write_submitter(helper_folder, chall)
-    write_solves(helper_folder, chall)
-    write_hints(helper_folder, chall)
+    write_submitter(helper_folder, challenge)
+    write_solves(helper_folder, challenge)
+    write_hints(helper_folder, challenge)
 
     if requires_instance(challenge):
-        write_instancer(helper_folder, chall)
+        write_instancer(helper_folder, challenge)
 
 
 def write_ctf_readme(output_dir, ctf_name, categories):
@@ -233,7 +235,16 @@ def classify_by_categories(challenges_data):
     return categories
 
 
-#main code starts here
+# Main code starts here
+
+# Argument Parsing
+parser = argparse.ArgumentParser()
+parser.add_argument("--list", help="List all challenges", action="store_true")
+parser.add_argument("--download", type=int, metavar="<challenge-id>", help="Download a challenge by providing its ID.")
+
+args = parser.parse_args()
+
+# Setup up required headers for authentication
 headers = {"Content-Type": "application/json"}
 if token:
     headers["Authorization"] = f"Token {token}"
@@ -242,11 +253,13 @@ elif cookie:
 else:
     raise ValueError("You must provide either a token or a cookie in the config file.")
 
+# Fetch challenges details
 api_url = urljoin(base_url, '/api/v1')
 session = requests.Session()
 challenges = fetch_challenges(api_url, headers)
 challenges_data = challenges['data']
 
+# Handle authentication failure
 if 'message' in challenges.keys() and challenges['message'].index('wrong credentials') > -1:
     print('Please provide correct token or session cookie in config file')
     exit(-1)
@@ -255,19 +268,34 @@ if 'message' in challenges.keys() and challenges['message'].index('wrong credent
 challenges_data = sorted(challenges_data, key=lambda x: (x['category'], x['value']))
 categories = classify_by_categories(challenges_data)
 
-write_ctf_readme(output_dir, ctf_name, categories)
+if args.list: # challenge list
+    for category in categories.keys():
+        print(f"{'='*5}{category}{'='*5}")
+        for chall in categories[category]:
+            path = os.path.join('.', chall['category'], slugify(chall['name']))
+            print(f'{chall["id"]:<3} {chall["name"]:<50} {chall["value"]:<6} {path if os.path.exists(path) else None}')
 
-# Identify and remove already downloaded challenges
-challenges_data = remove_already_downloaded_challs(challenges_data)
+if args.download: # challenge ID is supplied via download parameter
+    challenge_data = next((c for c in challenges_data if c['id'] == args.download), None)
+    challenge = fetch_challenge_details(session, api_url, challenge_data['id'], headers)
 
-# Main processing loop
-for chall in challenges_data:
-    challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
     download_challenge(challenge)
 
-logging.info("All done!")
+if len(sys.argv) == 1: # If no arguments are supplied, download all the challenge files
+    # Write CTF readme file
+    write_ctf_readme(output_dir, ctf_name, categories)
 
-if limit_failed:
-    print("Following challenges were not downloaded due to file size limit")
-    for name, size in limit_failed.items():
-        print(f"{name}: {size:.3f} MB")
+    # Identify and remove already downloaded challenges
+    challenges_data = remove_already_downloaded_challs(challenges_data)
+
+    # Download all the challenges
+    for chall in challenges_data:
+        challenge = fetch_challenge_details(session, api_url, chall['id'], headers)
+        download_challenge(challenge)
+
+    if limit_failed:
+        print("Following challenges were not downloaded due to file size limit")
+        for name, size in limit_failed.items():
+            print(f"{name}: {size:.3f} MB")
+
+    logging.info("All done!")

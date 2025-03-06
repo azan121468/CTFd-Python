@@ -106,7 +106,7 @@ def download_file(session, challenge, challenge_dir, url, output_path, desc):
         response = session.get(url, stream=True)
         total_size_in_bytes = int(response.headers.get('content-length', 0))
         size_in_mb = total_size_in_bytes / (1024**2)
-        if size_in_mb > file_size_limit:
+        if file_size_limit and size_in_mb > file_size_limit:
             print(f"File size limit exceeds. not Downloading. Size: {size_in_mb:.2f} MB")
             limit_failed[challenge['name']] = size_in_mb
             return
@@ -276,6 +276,8 @@ if args.list: # challenge list
             print(f'{chall["id"]:<3} {chall["name"]:<50} {chall["value"]:<6} {path if os.path.exists(path) else None}')
 
 if args.download: # challenge ID is supplied via download parameter
+    file_size_limit = False  # No file size limit if user is downloading a specific challenge
+
     challenge_data = next((c for c in challenges_data if c['id'] == args.download), None)
     challenge = fetch_challenge_details(session, api_url, challenge_data['id'], headers)
 

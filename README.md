@@ -7,7 +7,7 @@ This repository contains various scripts to help automate tasks for managing and
 ### blood_announcer.py
 **Usage:**
 ```bash
-./blood_announcer.py
+./blood_announcer.py        # Get blood status of all challenges
 ```
 - Retrieves the blood status of all challenges.
 - If a challenge is blooded, it reports the user and team who solved it.
@@ -23,22 +23,31 @@ Removes all the downloaded CTF data.
 
 ### config.ini
 - Contains:
-  - CTF token
+  - CTF Name
+  - CTF Directory
+  - CTF Token/Session-Cookie
   - File size limit
-- Automation scripts will pick variables from this file.
+- Automation scripts will pick configuration details from this file.
 
 ### download.py
 **Usage:**
 ```bash
-./download.py
+./download.py                                # Download all the challenges from the remote server
+./download.py --list                         # List all the active challenges
+./download.py --download <challenge-id>      # Download specific challenge
 ```
+
+- List all challenges
+- Download specific challenges
+    - File size limit doesn't apply while downloading a specific challenge
 - Downloads all the challenges from the server.
 - On new challenge releases, rerun the script to fetch only the new challenges.
 
 ### main_scoreboard.py
 **Usage:**
 ```bash
-./main_scoreboard.py <limit>
+./main_scoreboard.py            # Get full scoreboard
+./main_scoreboard.py <limit>    # Get scoreboard with provided limits
 ```
 - Displays the current scoreboard situation with team names and points.
 - The `<limit>` parameter specifies the number of teams:
@@ -54,7 +63,7 @@ Removes all the downloaded CTF data.
 ### team_solves.py
 **Usage:**
 ```bash
-./team_solves.py <team-name>
+./team_solves.py <team-name>   # Get solves of a specific team
 ```
 - Displays all solves of the specified team, including:
   - Member name
@@ -66,34 +75,32 @@ Removes all the downloaded CTF data.
 ### hints.py
 **Usage:**
 ```bash
-./hints.py
+./hints.py            # Get hints of the challenge
 ```
 - Retrieves and displays all released hints for the current challenge.
 
 ### instance.py
 **Usage:**
 ```bash
-./instance.py
+./instance.py         # Get instance details
+./instance.py KILL    # Kill running instance
 ```
 - Starts the remote container for challenges requiring remote instances.
 - Provides container info (IP, Port, or URL for web challenges).
-- Use the following command to stop the container:
-  ```bash
-  ./instance.py kill
-  ```
-- Note: There is a limit on the number of containers you can spawn.
+- Stops the remote container.
+Note: There is a limit on the number of containers you can spawn.
 
 ### solves.py
 **Usage:**
 ```bash
-./solves.py
+./solves.py           # Get all solves of current challenge
 ```
 - Retrieves all solves for the current challenge.
 
 ### fix_path.py
 **Usage:**
 ```bash
-./fix_path.py
+./fix_path.py         # Fix config path in all helpers files when transfered in different folder/OS
 ```
 - Change the hardcoded path in all helpers script according to the OS on which the script is running.
 - This allows to switch between operating systems or directory without affecting the helper scripts.

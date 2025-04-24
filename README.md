@@ -35,13 +35,15 @@ Removes all the downloaded CTF data.
 ./download.py                                # Download all the challenges from the remote server
 ./download.py --list                         # List all the active challenges
 ./download.py --download <challenge-id>      # Download specific challenge
+./download.py --category <category-name>     # Download all challenges of a specific category
 ```
 
 - List all challenges
-- Download specific challenges
+- Download all challenges from the server
+- Download all challenges of a specific category
+- Download a specific challenge
     - File size limit doesn't apply while downloading a specific challenge
-- Downloads all the challenges from the server.
-- On new challenge releases, rerun the script to fetch only the new challenges.
+- On new challenges release, rerun the script to fetch only the new challenges.
 
 ### main_scoreboard.py
 **Usage:**

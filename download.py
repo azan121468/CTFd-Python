@@ -241,6 +241,7 @@ def classify_by_categories(challenges_data):
 parser = argparse.ArgumentParser()
 parser.add_argument("--list", help="List all challenges", action="store_true")
 parser.add_argument("--download", type=int, metavar="<challenge-id>", help="Download a challenge by providing its ID.")
+parser.add_argument("--category", type=str, metavar="<category-name>", help="Download challenge category by providing the name.")
 
 args = parser.parse_args()
 
@@ -282,6 +283,19 @@ if args.download: # challenge ID is supplied via download parameter
     challenge = fetch_challenge_details(session, api_url, challenge_data['id'], headers)
 
     download_challenge(challenge)
+
+if args.category:
+    categories = set([i['category'] for i in challenges_data])
+    if args.category not in categories:
+        print(f"Category was not found. Choose from the following")
+        print(categories)
+        exit()
+
+    category_challs_data = [i for i in challenges_data if i['category'] == args.category] #data filtered based on specified category
+
+    for chall_data in category_challs_data:
+        challenge = fetch_challenge_details(session, api_url, chall_data['id'], headers)
+        download_challenge(challenge)
 
 if len(sys.argv) == 1: # If no arguments are supplied, download all the challenge files
     # Write CTF readme file

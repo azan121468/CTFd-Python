@@ -292,6 +292,7 @@ if args.category:
         exit()
 
     category_challs_data = [i for i in challenges_data if i['category'] == args.category] #data filtered based on specified category
+    category_challs_data = remove_already_downloaded_challs(category_challs_data)
 
     for chall_data in category_challs_data:
         challenge = fetch_challenge_details(session, api_url, chall_data['id'], headers)
